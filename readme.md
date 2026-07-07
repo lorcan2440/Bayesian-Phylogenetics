@@ -65,7 +65,7 @@ where $f(\gamma_k | \alpha)$ is the probability density function (PDF) of the ga
 
 Finally, we assume independence across sites to get the overall likelihood of the data:
 
-$$ p(D | T, b, \theta, \alpha) = \prod_{k=1}^{} p(D_k | T, b, \theta, \alpha) $$
+$$ p(D | T, b, \theta, \alpha) = \prod_{k}^{} p(D_k | T, b, \theta, \alpha) $$
 
 For notational simplicity we absorb the parameter $\alpha$ into the mutation model parameters $\theta$ and refer to this output as
 
