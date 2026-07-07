@@ -1,4 +1,5 @@
-from tree import PhyloTree, render_newick_svg
+from tree import PhyloTree
+from tree_visualisation import render_newick_svg
 
 import numpy as np
 from scipy.stats import gamma as gamma_dist
@@ -102,7 +103,7 @@ def calc_likelihood_of_ancestral_char(tree: PhyloTree, node: int, char_index: in
     - `float`: likelihood of observing the character at the given node
     '''
 
-    logger.info(f"\t\t\tCalculating likelihood of ancestral node {node} having character {CHARS[char_index]}.")
+    logger.info(f'\t\t\tCalculating likelihood of ancestral node {node} having character "{CHARS[char_index]}".')
 
     left_child, right_child = tree.children[node]
 
@@ -284,7 +285,7 @@ if __name__ == "__main__":
 
     likelihood = calc_likelihood(sequences, tree, branch_length, r_params, pi_params, alpha, n_gamma_bins)
 
-    print(f"Likelihood of observing the sequences at the leaves of the tree: {likelihood}")
+    print(f"Likelihood of observing the sequences at the leaves of the tree: p(D | T, b, theta, alpha) = {likelihood}")
 
     tree_newick = tree.to_newick(include_lengths=True)
 
