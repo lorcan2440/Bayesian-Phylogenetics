@@ -29,12 +29,7 @@ The GTR+Γ mutation model has 11 independent parameters:
 
 The transition rate matrix for GTR is:
 
-$$ \mathbf{Q} = \begin{bmatrix} 
-* & r_{AC} \pi_C & r_{AG} \pi_G & r_{AT} \pi_T \\ 
-r_{AC} \pi_A & * & r_{CG} \pi_G & r_{CT} \pi_T \\ 
-r_{AG} \pi_A & r_{CG} \pi_C & * & r_{GT} \pi_T \\ 
-r_{AT} \pi_A & r_{CT} \pi_C & r_{GT} \pi_G & * \\ 
-\end{bmatrix} $$
+$$ \mathbf{Q} = \begin{bmatrix} * & r_{AC} \pi_C & r_{AG} \pi_G & r_{AT} \pi_T \\ r_{AC} \pi_A & * & r_{CG} \pi_G & r_{CT} \pi_T \\ r_{AG} \pi_A & r_{CG} \pi_C & * & r_{GT} \pi_T \\ r_{AT} \pi_A & r_{CT} \pi_C & r_{GT} \pi_G & * \\ \end{bmatrix} $$
 
 where $*$ denotes the diagonal elements, which are set such that each row sums to zero. The corresponding discrete-time transition probability matrix is given by the matrix exponential:
 
