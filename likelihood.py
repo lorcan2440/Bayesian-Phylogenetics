@@ -32,10 +32,10 @@ def GTR_Q_matrix(r_params: tuple[float], pi_params: tuple[float]) -> np.ndarray:
     pi_A, pi_C, pi_G, pi_T = pi_params
 
     Q = np.array([
-        [1 - (r_AC * pi_C + r_AG * pi_G + r_AT * pi_T), r_AC * pi_C, r_AG * pi_G, r_AT * pi_T],
-        [r_AC * pi_A, 1 - (r_AC * pi_A + r_CG * pi_G + r_CT * pi_T), r_CG * pi_G, r_CT * pi_T],
-        [r_AG * pi_A, r_CG * pi_C, 1 - (r_AG * pi_A + r_CG * pi_C + r_GT * pi_T), r_GT * pi_T],
-        [r_AT * pi_A, r_CT * pi_C, r_GT * pi_G, 1 - (r_AT * pi_A + r_CT * pi_C + r_GT * pi_G)]
+        [-1 * (r_AC * pi_C + r_AG * pi_G + r_AT * pi_T), r_AC * pi_C, r_AG * pi_G, r_AT * pi_T],
+        [r_AC * pi_A, -1 * (r_AC * pi_A + r_CG * pi_G + r_CT * pi_T), r_CG * pi_G, r_CT * pi_T],
+        [r_AG * pi_A, r_CG * pi_C, -1 * (r_AG * pi_A + r_CG * pi_C + r_GT * pi_T), r_GT * pi_T],
+        [r_AT * pi_A, r_CT * pi_C, r_GT * pi_G, -1 * (r_AT * pi_A + r_CT * pi_C + r_GT * pi_G)]
     ])
 
     return Q
