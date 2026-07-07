@@ -1,14 +1,14 @@
-from tree import PhyloTree
-from tree_visualisation import render_newick_svg
-
+# external modules
 import numpy as np
 from scipy.stats import gamma as gamma_dist
 
+# local modules
+from tree import PhyloTree
+from tree_visualisation import render_newick_svg
 from utils import get_logger
 
 
 logger = get_logger()
-
 
 CHARS = ("A", "C", "G", "T")
 
@@ -31,30 +31,30 @@ def GTR_Q_matrix(r_params: tuple[float], pi_params: tuple[float]) -> np.ndarray:
     r_AC, r_AG, r_AT, r_CG, r_CT, r_GT = r_params
     pi_A, pi_C, pi_G, pi_T = pi_params
 
-    Q_0 = np.array([
+    Q = np.array([
         [1 - (r_AC * pi_C + r_AG * pi_G + r_AT * pi_T), r_AC * pi_C, r_AG * pi_G, r_AT * pi_T],
         [r_AC * pi_A, 1 - (r_AC * pi_A + r_CG * pi_G + r_CT * pi_T), r_CG * pi_G, r_CT * pi_T],
         [r_AG * pi_A, r_CG * pi_C, 1 - (r_AG * pi_A + r_CG * pi_C + r_GT * pi_T), r_GT * pi_T],
         [r_AT * pi_A, r_CT * pi_C, r_GT * pi_G, 1 - (r_AT * pi_A + r_CT * pi_C + r_GT * pi_G)]
     ])
 
-    return Q_0
+    return Q
 
 
-def diagonalise_GTR_Q_matrix(Q_0: np.ndarray) -> tuple[np.ndarray]:
+def diagonalise_GTR_Q_matrix(Q: np.ndarray) -> tuple[np.ndarray]:
     '''
     Diagonalise the continuous-time Markov chain (CTMC) transition rate matrix Q for the General Time Reversible (GTR) 
     model of nucleotide substitution.
     
     ### Arguments
-    - `Q_0` (np.ndarray): GTR transition rate matrix
+    - `Q` (np.ndarray): GTR transition rate matrix
     
     ### Returns
     - `tuple[np.ndarray]`: a tuple containing the eigenvector matrix S, the 1D array of eigenvalues lambda_vals, 
     and the inverse matrix of S.
     '''
 
-    lambda_vals, S = np.linalg.eig(Q_0)
+    lambda_vals, S = np.linalg.eig(Q)
 
     # ensure eigenvalues and eigenvectors are real-valued (they should be for a valid GTR matrix)
     lambda_vals = np.real(lambda_vals)
@@ -129,7 +129,7 @@ def calc_likelihood_of_ancestral_char(tree: PhyloTree, node: int, char_index: in
     return prod
 
 
-def felsenstein_pruning(tree: PhyloTree, site_index: int, gamma_vals: np.ndarray) -> float:
+def felsenstein_pruning(sequences: dict[str, str], tree: PhyloTree, site_index: int, gamma_vals: np.ndarray) -> float:
     '''Use Felsenstein's pruning algorithm to calculate the likelihood of observing characters at all nodes 
     in the tree, at a given site.
 
@@ -137,6 +137,7 @@ def felsenstein_pruning(tree: PhyloTree, site_index: int, gamma_vals: np.ndarray
     b are the branch lengths, and theta are the GTR parameters.
 
     ### Arguments
+    - `sequences` (dict[str, str]): dictionary mapping taxon names to their sequences
     - `tree` (PhyloTree): the phylogenetic tree
     - `site_index` (int): the index of the site for which to calculate the likelihoods
     - `gamma_vals` (np.ndarray): array of gamma values for rate heterogeneity
@@ -155,12 +156,14 @@ def felsenstein_pruning(tree: PhyloTree, site_index: int, gamma_vals: np.ndarray
         logger.info(f"\tCalculating likelihood with gamma = {gamma:.4f}.")
 
         # initialise likelihood vectors at this site, for all nodes
-        # for the leaf nodes, the likelihood is 1 if the observed character matches the character at that node, otherwise 0
-        # non-leaf nodes are left as None, to be populated during tree traversal
-        tree.likelihoods[site_index] = {
-            node: [None if node not in tree.leaf_name else (1.0 if sequences[tree.leaf_name[node]][site_index] == char else 0.0) 
-                for char in CHARS] for node in range(tree.next_id)
-        }
+        tree.likelihoods[site_index] = {}
+        for node in range(tree.next_id):
+            if node in tree.leaf_name:
+                observed_char = sequences[tree.leaf_name[node]][site_index]  # nucleotide in leaf node from given data
+                # likelihood is 1 if the character matches, 0 otherwise
+                tree.likelihoods[site_index][node] = [1.0 if observed_char == char else 0.0 for char in CHARS]
+            else:
+                tree.likelihoods[site_index][node] = [None] * len(CHARS)  # non-leaf nodes are left as None
 
         # assign likelihoods to all nodes of the tree
         for node in tree.postorder_traversal():
@@ -216,8 +219,8 @@ def calc_likelihood(sequences: dict[str, str], tree: PhyloTree, branch_length: d
     n_chars = len(list(sequences.values())[0])  # number of sites (characters) in the sequences
 
     # calculate the GTR transition rate matrix Q and its diagonalisation
-    Q_0 = GTR_Q_matrix(r_params, pi_params)
-    tree.S, tree.lambda_vals, tree.S_inv = diagonalise_GTR_Q_matrix(Q_0)
+    Q = GTR_Q_matrix(r_params, pi_params)
+    tree.S, tree.lambda_vals, tree.S_inv = diagonalise_GTR_Q_matrix(Q)
 
     tree.pi_params = pi_params  # store GTR frequency parameters
 
@@ -231,7 +234,7 @@ def calc_likelihood(sequences: dict[str, str], tree: PhyloTree, branch_length: d
     # assume independence over sites: total likelihood is the product of likelihoods at each site
     likelihood = 1.0
     for site_index in range(n_chars):
-        likelihood *= felsenstein_pruning(tree, site_index, gamma_vals)
+        likelihood *= felsenstein_pruning(sequences, tree, site_index, gamma_vals)
 
     return likelihood
 
