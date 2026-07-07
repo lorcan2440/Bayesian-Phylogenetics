@@ -2,6 +2,19 @@
 
 This repo aims to implement Bayesian phylogenetic inference from first-principles in Python.
 
+### Progress
+
+- [x] Implement a phylogenetic tree data structure
+- [x] Implement the GTR+Γ mutation model
+- [x] Implement Felsenstein's pruning algorithm for likelihood calculation
+- [ ] Implement Metropolis-Hastings algorithm
+- [ ] Implement Markov chain Monte Carlo (MCMC) with burn-in and pruning at stationarity
+- [ ] Calculate the posterior trees and the MAP tree
+- [ ] Calculate clade consensus probabilities
+- [ ] Convert to MC^3 using multiprocessing for parallel tempering
+- [ ] Use thermodynamic integration to calculate the evidence P(D)
+- [ ] Perform ancestral state reconstruction
+
 ### Mutation model
 
 This code uses the GTR+Γ (general time reversible with gamma-distributed rate heterogeneity) model of nucleotide substitution. The GTR model is a continuous-time Markov chain (CTMC) model that allows for different mutation rates between each pair of nucleotides (A, C, G, T). The gamma distribution accounts for the fact that different sites in the sequence may evolve at different rates.
