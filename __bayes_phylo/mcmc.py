@@ -8,7 +8,7 @@ import random
 from .likelihood import build_leaf_sequences, log_likelihood
 from .parsing import SequenceData
 from .prior import log_prior
-from .tree import MIN_BRANCH_LENGTH, PhyloTree, random_binary_tree
+from ..tree import MIN_BRANCH_LENGTH, PhyloTree, random_binary_tree
 
 
 @dataclass(frozen=True)

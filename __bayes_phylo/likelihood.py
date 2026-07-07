@@ -3,7 +3,7 @@ from __future__ import annotations
 import math
 
 from .jc69 import transition_terms
-from .tree import PhyloTree
+from ..tree import PhyloTree
 
 
 def build_leaf_sequences(tree: PhyloTree, data_by_taxon: dict[str, tuple[int, ...]]) -> dict[int, tuple[int, ...]]:

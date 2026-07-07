@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import math
 
-from .tree import MIN_BRANCH_LENGTH, PhyloTree
+from ..tree import MIN_BRANCH_LENGTH, PhyloTree
 
 
 def log_prior(
