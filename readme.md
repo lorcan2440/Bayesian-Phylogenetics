@@ -35,7 +35,7 @@ where $*$ denotes the diagonal elements, which are set such that each row sums t
 
 $$ \mathbf{P}(t) = e^{\mathbf{Q} \gamma_k t} $$
 
-where $t$ is the branch length (time) and $\mathbf{P}(t)$ gives the probabilities of transitioning from one nucleotide to another over time $t$. The factor $\gamma_k$ is the rate modifier for nucleotide site $k$, drawn from a Gamma distribution:
+where $t$ is the branch length (time) and the entries of $\mathbf{P}(t)$ give the probabilities of transitioning from one nucleotide to another in a time $t$. The factor $\gamma_k$ is the rate modifier for nucleotide site $k$, drawn from a Gamma distribution:
 
 $$ \gamma_k \sim \text{Gamma}(\alpha, \alpha) $$
 
