@@ -253,9 +253,9 @@ def calc_likelihood(sequences: dict[str, str], tree: PhyloTree, branch_length: d
             func=lambda x: x, args=(alpha,), scale=1 / alpha, 
             lb=gamma_bounds[i], ub=gamma_bounds[i + 1], conditional=True) for i in range(n_gamma_bins)])
     elif gamma_calc_method == 'incomplete_gamma_func':
+        gamma_inc_vals = gammainc(alpha + 1, alpha * gamma_bounds)
         gamma_vals = np.array(
-            [n_gamma_bins * (gammainc(alpha + 1, alpha * b) - gammainc(alpha + 1, alpha * a))
-             for a, b in zip(gamma_bounds[:-1], gamma_bounds[1:])])
+            [n_gamma_bins * (gamma_inc_vals[i + 1] - gamma_inc_vals[i]) for i in range(n_gamma_bins)])
 
     # init empty likelihoods table for all sites
     tree.likelihoods = {site_index: None for site_index in range(n_chars)}
