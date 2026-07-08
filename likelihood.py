@@ -64,7 +64,7 @@ def diagonalise_GTR_Q_matrix(Q: np.ndarray, pi_params: tuple[float]) -> tuple[np
 
     A = D_half @ Q @ D_half_inv  # construct a real symmetric matrix
 
-    lambda_vals, U = np.linalg.eigh(A)
+    lambda_vals, U = np.linalg.eigh(A)  # real-symmetric eigendecomposition of A = U @ diag(lambda_vals) @ U^T
 
     return D_half, U, lambda_vals, D_half_inv
 
@@ -73,6 +73,9 @@ def calc_transition_probability_matrix(Q_eig: tuple[np.ndarray], branch_length: 
     '''
     Calculate the discrete-time Markov chain (DTMC) transition matrix P given 
     the CTMC transition rate matrix Q (in its diagonalised form).
+
+    The result is given by P(t) = exp(Q * t) = D^(-1/2) @ U diag(exp(lambda_vals * t)) @ U^T @ D^(1/2), where
+    Q is diagonalised as Q = D^(-1/2) @ U diag(lambda_vals) @ U^T @ D^(1/2).
 
     Returns P(t), where t is the branch length.
     
