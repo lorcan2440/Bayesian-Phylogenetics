@@ -20,6 +20,8 @@ def GTR_Q_matrix(r_params: tuple[float], pi_params: tuple[float]) -> np.ndarray:
 
     dP(t)/dt = P(t) @ Q
 
+    The rows of this matrix sum to 1, and the diagonal entries are negative, representing the rate of leaving each state.
+
     ### Arguments
     - `r_params` (tuple[float]): GTR rate parameters (r_AC, r_AG, r_AT, r_CG, r_CT, r_GT)
     - `pi_params` (tuple[float]): GTR equilibrium frequencies (pi_A, pi_C, pi_G, pi_T)
@@ -46,7 +48,10 @@ def diagonalise_GTR_Q_matrix(Q: np.ndarray, pi_params: tuple[float]) -> tuple[np
     Diagonalise the continuous-time Markov chain (CTMC) transition rate matrix Q for the General Time Reversible (GTR) 
     model of nucleotide substitution.
 
-    Computes Q = D^(-1/2) @ U diag(lambda_vals) @ U^T @ D^(1/2), where D is the diagonal matrix of equilibrium frequencies, 
+    This function exploits the detailed balance condition of Q, for which D @ Q = Q^T @ D, where D is the diagonal 
+    matrix of equilibrium frequencies (pi_params).
+
+    Q can therefore be diagonalised as: Q = D^(-1/2) @ U diag(lambda_vals) @ U^T @ D^(1/2), where
     U is the matrix of eigenvectors, and lambda_vals are the eigenvalues of Q.
 
     These can be used to compute the matrix exponential, exp(Q * t) = D^(-1/2) @ U diag(exp(lambda_vals * t)) @ U^T @ D^(1/2).
@@ -194,7 +199,8 @@ def felsenstein_pruning(sequences: dict[str, str], tree: PhyloTree, site_index: 
     return root_likelihood
 
 
-def calc_likelihood(sequences: dict[str, str], tree: PhyloTree, branch_length: dict[int, float], r_params: tuple[float], pi_params: tuple[float], alpha: float, n_gamma_bins: int) -> float:
+def calc_likelihood(sequences: dict[str, str], tree: PhyloTree, branch_length: dict[int, float], 
+                    r_params: tuple[float], pi_params: tuple[float], alpha: float, n_gamma_bins: int = 4) -> float:
     '''Calculate the likelihood of observing the given sequences at the leaves of the tree, under the GTR model with 
     rate heterogeneity.
 
@@ -232,9 +238,15 @@ def calc_likelihood(sequences: dict[str, str], tree: PhyloTree, branch_length: d
 
     tree.pi_params = pi_params  # store GTR frequency parameters
 
-    # discrete gamma approximation for rate heterogeneity
-    gamma_cdf_vals = np.arange(1, 2 * n_gamma_bins, 2) / (2 * n_gamma_bins)
-    gamma_vals = gamma_dist.ppf(gamma_cdf_vals, a=alpha, scale=1 / alpha)
+    # discrete gamma approximation for rate heterogeneity, Yang 1994
+    gamma_cdf_bounds = np.linspace(0, 1, n_gamma_bins + 1)
+    gamma_bounds = gamma_dist.ppf(gamma_cdf_bounds, a=alpha, scale=1 / alpha)
+    gamma_bounds[0] = 0.0
+    gamma_bounds[-1] = np.inf
+
+    gamma_vals = np.array([gamma_dist.expect(
+        func=lambda x: x, args=(alpha,), scale=1 / alpha, 
+        lb=gamma_bounds[i], ub=gamma_bounds[i + 1], conditional=True) for i in range(n_gamma_bins)])
 
     # init empty likelihoods table for all sites
     tree.likelihoods = {site_index: None for site_index in range(n_chars)}
@@ -289,12 +301,10 @@ if __name__ == "__main__":
 
     alpha = 0.5
 
-    n_gamma_bins = 4
-
     r_params = (r_AC, r_AG, r_AT, r_CG, r_CT, r_GT)
     pi_params = (pi_A, pi_C, pi_G, pi_T)
 
-    likelihood = calc_likelihood(sequences, tree, branch_length, r_params, pi_params, alpha, n_gamma_bins)
+    likelihood = calc_likelihood(sequences, tree, branch_length, r_params, pi_params, alpha, n_gamma_bins=4)
 
     print(f"Likelihood of observing the sequences at the leaves of the tree: p(D | T, b, theta, alpha) = {likelihood}")
 
