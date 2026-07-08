@@ -41,31 +41,35 @@ def GTR_Q_matrix(r_params: tuple[float], pi_params: tuple[float]) -> np.ndarray:
     return Q
 
 
-def diagonalise_GTR_Q_matrix(Q: np.ndarray) -> tuple[np.ndarray]:
+def diagonalise_GTR_Q_matrix(Q: np.ndarray, pi_params: tuple[float]) -> tuple[np.ndarray]:
     '''
     Diagonalise the continuous-time Markov chain (CTMC) transition rate matrix Q for the General Time Reversible (GTR) 
     model of nucleotide substitution.
+
+    Computes Q = D^(-1/2) @ U diag(lambda_vals) @ U^T @ D^(1/2), where D is the diagonal matrix of equilibrium frequencies, 
+    U is the matrix of eigenvectors, and lambda_vals are the eigenvalues of Q.
+
+    These can be used to compute the matrix exponential, exp(Q * t) = D^(-1/2) @ U diag(exp(lambda_vals * t)) @ U^T @ D^(1/2).
     
     ### Arguments
     - `Q` (np.ndarray): GTR transition rate matrix
+    - `pi_params` (tuple[float]): GTR frequency parameters (pi_A, pi_C, pi_G, pi_T)
     
     ### Returns
-    - `tuple[np.ndarray]`: a tuple containing the eigenvector matrix S, the 1D array of eigenvalues lambda_vals, 
-    and the inverse matrix of S.
+    - `tuple[np.ndarray]`: D^(1/2), U, eigenvalues of Q, D^(-1/2).
     '''
 
-    lambda_vals, S = np.linalg.eig(Q)
+    D_half = np.diag(np.sqrt(pi_params))  # D^(1/2)
+    D_half_inv = np.diag(1 / np.sqrt(pi_params))  # D^(-1/2)
 
-    # ensure eigenvalues and eigenvectors are real-valued (they should be for a valid GTR matrix)
-    lambda_vals = np.real(lambda_vals)
-    S = np.real(S)
+    A = D_half @ Q @ D_half_inv  # construct a real symmetric matrix
 
-    S_inv = np.linalg.inv(S)  # pre-compute inverse matrix of S
+    lambda_vals, U = np.linalg.eigh(A)
 
-    return S, lambda_vals, S_inv
+    return D_half, U, lambda_vals, D_half_inv
 
 
-def calc_transition_probability_matrix(S: np.ndarray, lambda_vals: np.ndarray, S_inv: np.ndarray, branch_length: float, gamma: float) -> np.ndarray:
+def calc_transition_probability_matrix(Q_eig: tuple[np.ndarray], branch_length: float, gamma: float) -> np.ndarray:
     '''
     Calculate the discrete-time Markov chain (DTMC) transition matrix P given 
     the CTMC transition rate matrix Q (in its diagonalised form).
@@ -73,9 +77,8 @@ def calc_transition_probability_matrix(S: np.ndarray, lambda_vals: np.ndarray, S
     Returns P(t), where t is the branch length.
     
     ### Arguments
-    - `S` (np.ndarray): eigenvector matrix of Q
-    - `lambda_vals` (np.ndarray): 1D array of eigenvalues of Q
-    - `S_inv` (np.ndarray): inverse of the eigenvector matrix S
+    - `Q_eig` (tuple[np.ndarray]): components of the diagonalisation of the GTR transition rate matrix Q, as returned
+    by the `diagonalise_GTR_Q_matrix` function
     - `branch_length` (float): branch length for which to calculate the transition matrix
     - `gamma` (float): rate heterogeneity parameter
 
@@ -83,7 +86,9 @@ def calc_transition_probability_matrix(S: np.ndarray, lambda_vals: np.ndarray, S
     - `np.ndarray`: transition probability matrix P
     '''
 
-    P = S @ np.diag(np.exp(gamma * branch_length * lambda_vals)) @ S_inv
+    D_half, U, lambda_vals, D_half_inv = Q_eig
+
+    P = D_half_inv @ U @ np.diag(np.exp(gamma * branch_length * lambda_vals)) @ U.T @ D_half
     return P
 
 
@@ -110,8 +115,8 @@ def calc_likelihood_of_ancestral_char(tree: PhyloTree, node: int, char_index: in
     left_branch_length = tree.branch_length[left_child]
     right_branch_length = tree.branch_length[right_child]
 
-    P_left = calc_transition_probability_matrix(tree.S, tree.lambda_vals, tree.S_inv, left_branch_length, gamma)
-    P_right = calc_transition_probability_matrix(tree.S, tree.lambda_vals, tree.S_inv, right_branch_length, gamma)
+    P_left = calc_transition_probability_matrix(tree.Q_eig, left_branch_length, gamma)
+    P_right = calc_transition_probability_matrix(tree.Q_eig, right_branch_length, gamma)
 
     left_sum = 0
     for left_char_index, _left_char in enumerate(CHARS):
@@ -220,7 +225,7 @@ def calc_likelihood(sequences: dict[str, str], tree: PhyloTree, branch_length: d
 
     # calculate the GTR transition rate matrix Q and its diagonalisation
     Q = GTR_Q_matrix(r_params, pi_params)
-    tree.S, tree.lambda_vals, tree.S_inv = diagonalise_GTR_Q_matrix(Q)
+    tree.Q_eig = diagonalise_GTR_Q_matrix(Q, pi_params)  # store eigendecomposition of Q for later use
 
     tree.pi_params = pi_params  # store GTR frequency parameters
 
