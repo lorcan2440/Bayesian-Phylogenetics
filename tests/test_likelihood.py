@@ -15,6 +15,10 @@ if __name__ == '__main__':
     import __init__
 
 from likelihood import GTR_Q_matrix, calc_log_likelihood, diagonalise_GTR_Q_matrix, calc_transition_probability_matrix
+from utils import get_logger
+
+
+logger = get_logger()
 
 
 def test_matrix_exponential(gtr_params: tuple[np.ndarray, np.ndarray]):
@@ -41,7 +45,9 @@ def test_matrix_exponential(gtr_params: tuple[np.ndarray, np.ndarray]):
     P_scipy = expm(Q * dt)
 
     # check they are close
-    assert np.allclose(P, P_scipy, atol=1e-9), "Matrix exponential calculation does not match scipy's expm function"
+    if not np.allclose(P, P_scipy, atol=1e-9):
+        logger.error("Matrix exponential calculation does not match scipy's expm function.")
+        raise AssertionError("Matrix exponential calculation does not match scipy's expm function.")
 
 
 def test_likelihood(create_test_tree):
@@ -94,7 +100,6 @@ def test_likelihood(create_test_tree):
                 regex = rf"^\s*({key})\s*=\s*.*?(\s*\*.*)?$"
                 replace = re.sub(regex, lambda m: f"{m.group(1)} = {value}{m.group(2) or ''}", line)
                 if replace != line:
-                    print(f"Replacing line {i}: '{line.strip()}' with '{replace.strip()}'")
                     ctl_lines[i] = replace
                     break
 
@@ -118,7 +123,7 @@ def test_likelihood(create_test_tree):
             )
         # ignore the error code if results were still written
         # TODO: can we stop this error code happening?
-        print(
+        logger.warning(
             f"Baseml exited with code {paml_output.returncode}, "
             f"but results were written to {PAML_OUTPUT_FILE_PATH}"
         )
@@ -152,14 +157,21 @@ def test_likelihood(create_test_tree):
     r_params = (r_AC, r_AG, r_AT, r_CG, r_CT, r_GT)
     pi_params = (pi_A, pi_C, pi_G, pi_T)
 
+    logger.info(f"Rate parameters from PAML: {r_params}")
+    logger.info(f"Base frequencies from PAML: {pi_params}")
+
     # check Q matrix is the same
     Q = GTR_Q_matrix(r_params, pi_params)
-    assert np.allclose(Q, Q_paml, atol=1e-6), "No match."
+    if not np.allclose(Q, Q_paml, atol=1e-6):
+        logger.error("Q matrix does not match PAML's output.")
+        raise AssertionError("No match.")
 
     # run our likelihood calculation and check it matches PAML's log-likelihood
     log_likelihood = calc_log_likelihood(sequences, tree, branch_length, r_params, pi_params, alpha,
         n_gamma_bins=4, calc_raw_likelihood=False)
-    assert np.isclose(log_likelihood, paml_log_likelihood, atol=1e-6), "Log-likelihood does not match PAML's output"
+    if not np.isclose(log_likelihood, paml_log_likelihood, atol=1e-6):
+        logger.error("Log-likelihood does not match PAML's output.")
+        raise AssertionError("Log-likelihood does not match PAML's output.")
 
 
 if __name__ == "__main__":
