@@ -164,7 +164,7 @@ def test_likelihood(create_test_tree):
     Q = GTR_Q_matrix(r_params, pi_params)
     if not np.allclose(Q, Q_paml, atol=1e-6):
         logger.error("Q matrix does not match PAML's output.")
-        raise AssertionError("No match.")
+        raise AssertionError("CTMC Q matrix does not match PAML's output.")
 
     # run our likelihood calculation and check it matches PAML's log-likelihood
     log_likelihood = calc_log_likelihood(sequences, tree, branch_length, r_params, pi_params, alpha,
