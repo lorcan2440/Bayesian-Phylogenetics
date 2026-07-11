@@ -18,6 +18,7 @@ Written from first principles for educational purposes. Since the program is pur
 #### Milestone 2: Bayesian MCMC inference
 
 - [x] Define prior distributions
+- [ ] Define proposal distributions for MCMC
 - [ ] Implement Metropolis-Hastings algorithm
 - [ ] Implement Markov chain Monte Carlo (MCMC) with burn-in and pruning at stationarity
 - [ ] Calculate the posterior trees and the MAP tree
