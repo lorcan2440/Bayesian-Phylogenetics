@@ -8,19 +8,27 @@ Written from first principles for educational purposes. Since the program is pur
 
 ### Progress
 
+#### Milestone 1: Likelihood calculation
+
 - [x] Implement a phylogenetic tree data structure
 - [x] Implement the GTR+Γ mutation model
 - [x] Implement Felsenstein's pruning algorithm for likelihood calculation
 - [x] Test likelihood calculation against PAML's baseml
+
+#### Milestone 2: Bayesian MCMC inference
+
 - [x] Define prior distributions
 - [ ] Implement Metropolis-Hastings algorithm
 - [ ] Implement Markov chain Monte Carlo (MCMC) with burn-in and pruning at stationarity
 - [ ] Calculate the posterior trees and the MAP tree
 - [ ] Calculate clade consensus probabilities
 - [ ] Test MCMC against MrBayes or RevBayes
+
+#### Milestone 3: Modern optimisations
+
 - [ ] Convert to MC^3 using multiprocessing for parallel tempering
 - [ ] Use thermodynamic integration to calculate the evidence P(D)
-- [ ] Perform ancestral state reconstruction
+- [ ] Perform ancestral state reconstruction (ASR)
 
 ### Mutation model
 
