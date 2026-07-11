@@ -201,8 +201,7 @@ def felsenstein_pruning(sequences: dict[str, str], tree: PhyloTree, site_index: 
 
 
 def calc_likelihood(sequences: dict[str, str], tree: PhyloTree, branch_length: dict[int, float], 
-                    r_params: tuple[float], pi_params: tuple[float], alpha: float, n_gamma_bins: int = 4,
-                    gamma_calc_method: str = 'incomplete_gamma_func') -> float:
+                    r_params: tuple[float], pi_params: tuple[float], alpha: float, n_gamma_bins: int = 4) -> float:
     '''Calculate the likelihood of observing the given sequences at the leaves of the tree, under the GTR model with 
     rate heterogeneity.
 
@@ -219,8 +218,6 @@ def calc_likelihood(sequences: dict[str, str], tree: PhyloTree, branch_length: d
     - `pi_params` (tuple[float]): GTR equilibrium frequencies (pi_A, pi_C, pi_G, pi_T)
     - `alpha` (float): shape parameter for the gamma distribution modeling rate heterogeneity
     - `n_gamma_bins` (int): number of discrete gamma bins to use for rate heterogeneity
-    - `gamma_calc_method` (str): method to calculate the discrete gamma values, either 'conditional_expectation' or
-    'incomplete_gamma_func'. The latter is the default and is faster.
 
     ### Returns
     - `float`: the likelihood of observing the sequences at the leaves of the tree
@@ -243,19 +240,13 @@ def calc_likelihood(sequences: dict[str, str], tree: PhyloTree, branch_length: d
     tree.pi_params = pi_params  # store GTR frequency parameters
 
     # discrete gamma approximation for rate heterogeneity, Yang 1994
+    # each gamma is the mean of the gamma distribution over a bin, with equal probability mass in each bin
     gamma_cdf_bounds = np.linspace(0, 1, n_gamma_bins + 1)
     gamma_bounds = gamma_dist.ppf(gamma_cdf_bounds, a=alpha, scale=1 / alpha)
     gamma_bounds[0] = 0.0
     gamma_bounds[-1] = np.inf
-
-    if gamma_calc_method == 'conditional_expectation':
-        gamma_vals = np.array([gamma_dist.expect(
-            func=lambda x: x, args=(alpha,), scale=1 / alpha, 
-            lb=gamma_bounds[i], ub=gamma_bounds[i + 1], conditional=True) for i in range(n_gamma_bins)])
-    elif gamma_calc_method == 'incomplete_gamma_func':
-        gamma_inc_vals = gammainc(alpha + 1, alpha * gamma_bounds)
-        gamma_vals = np.array(
-            [n_gamma_bins * (gamma_inc_vals[i + 1] - gamma_inc_vals[i]) for i in range(n_gamma_bins)])
+    gamma_inc_vals = gammainc(alpha + 1, alpha * gamma_bounds)  # antiderivative of gamma PDF at bounds
+    gamma_vals = np.array([n_gamma_bins * (gamma_inc_vals[i + 1] - gamma_inc_vals[i]) for i in range(n_gamma_bins)])
 
     # init empty likelihoods table for all sites
     tree.likelihoods = {site_index: None for site_index in range(n_chars)}
@@ -313,8 +304,7 @@ if __name__ == "__main__":
     r_params = (r_AC, r_AG, r_AT, r_CG, r_CT, r_GT)
     pi_params = (pi_A, pi_C, pi_G, pi_T)
 
-    likelihood = calc_likelihood(sequences, tree, branch_length, r_params, pi_params, alpha, 
-        n_gamma_bins=4, gamma_calc_method='incomplete_gamma_func')
+    likelihood = calc_likelihood(sequences, tree, branch_length, r_params, pi_params, alpha, n_gamma_bins=4)
 
     print(f"Likelihood of observing the sequences at the leaves of the tree: p(D | T, b, theta, alpha) = {likelihood}")
 
