@@ -104,8 +104,19 @@ def propose_new_GTR_freqs(pi_params: np.ndarray) -> tuple[np.ndarray, float]:
     new_pi_params[i] += delta
     new_pi_params[j] -= delta
 
-    if new_pi_params[i] > 1.0 or new_pi_params[j] < 0.0:
-        return propose_new_GTR_freqs(pi_params)  # try again if the perturbation goes out of bounds
+    # reflect the perturbation if it goes out of bounds
+    if new_pi_params[i] < 0.0:
+        new_pi_params[i] = -new_pi_params[i]
+        new_pi_params[j] = new_pi_params[j] - 2 * new_pi_params[i]
+    if new_pi_params[j] < 0.0:
+        new_pi_params[j] = -new_pi_params[j]
+        new_pi_params[i] = new_pi_params[i] - 2 * new_pi_params[j]
+    if new_pi_params[i] > 1.0:
+        new_pi_params[i] = 2.0 - new_pi_params[i]
+        new_pi_params[j] = new_pi_params[j] + 2 * (1.0 - new_pi_params[i])
+    if new_pi_params[j] > 1.0:
+        new_pi_params[j] = 2.0 - new_pi_params[j]
+        new_pi_params[i] = new_pi_params[i] + 2 * (1.0 - new_pi_params[j])
     
     # re-normalise to remove any numerical drift
     new_pi_params /= np.sum(new_pi_params)
