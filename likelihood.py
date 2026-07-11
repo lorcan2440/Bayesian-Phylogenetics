@@ -21,7 +21,7 @@ def GTR_Q_matrix(r_params: tuple[float], pi_params: tuple[float]) -> np.ndarray:
 
     dP(t)/dt = P(t) @ Q
 
-    The rows of this matrix sum to 1, and the diagonal entries are negative, representing the rate of leaving each state.
+    The rows of this matrix sum to 0, and the diagonal entries are negative, representing the rate of leaving each state.
 
     ### Arguments
     - `r_params` (tuple[float]): GTR rate parameters (r_AC, r_AG, r_AT, r_CG, r_CT, r_GT)
@@ -34,12 +34,16 @@ def GTR_Q_matrix(r_params: tuple[float], pi_params: tuple[float]) -> np.ndarray:
     r_AC, r_AG, r_AT, r_CG, r_CT, r_GT = r_params
     pi_A, pi_C, pi_G, pi_T = pi_params
 
+    # fill in off-diagonals
     Q = np.array([
-        [-1 * (r_AC * pi_C + r_AG * pi_G + r_AT * pi_T), r_AC * pi_C, r_AG * pi_G, r_AT * pi_T],
-        [r_AC * pi_A, -1 * (r_AC * pi_A + r_CG * pi_G + r_CT * pi_T), r_CG * pi_G, r_CT * pi_T],
-        [r_AG * pi_A, r_CG * pi_C, -1 * (r_AG * pi_A + r_CG * pi_C + r_GT * pi_T), r_GT * pi_T],
-        [r_AT * pi_A, r_CT * pi_C, r_GT * pi_G, -1 * (r_AT * pi_A + r_CT * pi_C + r_GT * pi_G)]
+        [0, r_AC * pi_C, r_AG * pi_G, r_AT * pi_T],
+        [r_AC * pi_A, 0, r_CG * pi_G, r_CT * pi_T],
+        [r_AG * pi_A, r_CG * pi_C, 0, r_GT * pi_T],
+        [r_AT * pi_A, r_CT * pi_C, r_GT * pi_G, 0]
     ])
+
+    # fill in diagonals so that rows sum to 0
+    Q[np.diag_indices(4)] = -Q.sum(axis=1)
 
     # normalise
     rate = -np.sum(pi_params * np.diag(Q))
