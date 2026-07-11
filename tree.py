@@ -1,7 +1,7 @@
-from __future__ import annotations
-
+# built-in modules
 from dataclasses import dataclass
 import random
+
 
 MIN_BRANCH_LENGTH = 1e-6
 

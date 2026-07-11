@@ -1,14 +1,16 @@
 # unit tests for likelihood.py
+
+# built-in modules
 import re
 import shutil
 import subprocess
 from pathlib import Path
+
+# external modules
 import numpy as np
 from scipy.linalg import expm
 
-import pytest
-
-# local imports
+# local modules
 if __name__ == '__main__':
     import __init__
 
