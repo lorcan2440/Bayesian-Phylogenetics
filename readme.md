@@ -12,6 +12,7 @@ Written from first principles for educational purposes. Since the program is pur
 - [x] Implement the GTR+Γ mutation model
 - [x] Implement Felsenstein's pruning algorithm for likelihood calculation
 - [x] Test likelihood calculation against PAML's baseml
+- [x] Define prior distributions
 - [ ] Implement Metropolis-Hastings algorithm
 - [ ] Implement Markov chain Monte Carlo (MCMC) with burn-in and pruning at stationarity
 - [ ] Calculate the posterior trees and the MAP tree
