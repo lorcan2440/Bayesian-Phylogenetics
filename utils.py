@@ -1,5 +1,7 @@
 import logging
+from pathlib import Path
 
+from rich.console import Console
 from rich.logging import RichHandler
 
 
@@ -17,12 +19,20 @@ def get_logger(
         logging.Logger: Configured Logger object
     """
 
+    log_file = Path(__file__).resolve().parent / "debug.log"
+    rich_file_console = Console(
+        file=log_file.open("a", encoding="utf-8"),
+        force_terminal=False,
+        color_system=None,
+    )
+
     # Global settings
     logging.basicConfig(
         level=global_level,
         format="%(message)s",
         datefmt="[%X]",
-        handlers=[RichHandler(rich_tracebacks=True)],
+        handlers=[RichHandler(rich_tracebacks=True, console=rich_file_console)],
+        force=True,
     )
 
     # Our handler for our package

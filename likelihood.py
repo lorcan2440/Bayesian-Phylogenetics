@@ -41,6 +41,10 @@ def GTR_Q_matrix(r_params: tuple[float], pi_params: tuple[float]) -> np.ndarray:
         [r_AT * pi_A, r_CT * pi_C, r_GT * pi_G, -1 * (r_AT * pi_A + r_CT * pi_C + r_GT * pi_G)]
     ])
 
+    # normalise
+    rate = -np.sum(pi_params * np.diag(Q))
+    Q /= rate
+
     return Q
 
 
@@ -140,6 +144,10 @@ def calc_likelihood_of_ancestral_char(tree: PhyloTree, node: int, char_index: in
         right_sum += right_transition_prob * right_likelihood
 
     prod = left_sum * right_sum
+
+    if prod == 0:
+        logger.warning(f"\t\t\tLikelihood of ancestral node {node} having character '{CHARS[char_index]}' "
+                       f"has underflowed to zero. Consider using log-likelihoods instead.")
     return prod
 
 
@@ -200,9 +208,10 @@ def felsenstein_pruning(sequences: dict[str, str], tree: PhyloTree, site_index: 
     return root_likelihood
 
 
-def calc_likelihood(sequences: dict[str, str], tree: PhyloTree, branch_length: dict[int, float], 
-                    r_params: tuple[float], pi_params: tuple[float], alpha: float, n_gamma_bins: int = 4) -> float:
-    '''Calculate the likelihood of observing the given sequences at the leaves of the tree, under the GTR model with 
+def calc_log_likelihood(sequences: dict[str, str], tree: PhyloTree, branch_length: dict[int, float], 
+                    r_params: tuple[float], pi_params: tuple[float], alpha: float, 
+                    n_gamma_bins: int = 4, calc_raw_likelihood: bool = False) -> float:
+    '''Calculate the log-likelihood of observing the given sequences at the leaves of the tree, under the GTR model with 
     rate heterogeneity.
 
     Returns p(D | T, b, theta), where D are the observed sequences at the leaves, T is the tree topology, 
@@ -212,22 +221,41 @@ def calc_likelihood(sequences: dict[str, str], tree: PhyloTree, branch_length: d
     distribution of trees, branch lengths, and GTR parameters, in Bayesian MCMC.
 
     ### Arguments
+    #### Required
     - `tree` (PhyloTree): the phylogenetic tree
     - `sequences` (dict[str, str]): a dictionary mapping leaf names to their corresponding sequences
     - `r_params` (tuple[float]): GTR rate parameters (r_AC, r_AG, r_AT, r_CG, r_CT, r_GT)
     - `pi_params` (tuple[float]): GTR equilibrium frequencies (pi_A, pi_C, pi_G, pi_T)
     - `alpha` (float): shape parameter for the gamma distribution modeling rate heterogeneity
-    - `n_gamma_bins` (int): number of discrete gamma bins to use for rate heterogeneity
+    #### Optional
+    - `n_gamma_bins` (int, default=4): number of discrete gamma bins to use for rate heterogeneity
+    - `calc_raw_likelihood` (bool, default=False): whether to calculate the raw likelihood rather than the log-likelihood
 
     ### Returns
-    - `float`: the likelihood of observing the sequences at the leaves of the tree
+    - `float`: the log-likelihood of observing the sequences at the leaves of the tree
     '''
 
     logger.info("Started calculation of likelihood.")
 
-    # assert all sequences have the same length
+    # check inputs are valid
     if len(set(len(seq) for seq in sequences.values())) != 1:
-        raise ValueError("All sequences must have the same length.")
+        raise ValueError("All sequences must have the same length."
+            f"Got lengths {[len(seq) for seq in sequences.values()]} for sequences {list(sequences.keys())}.")
+    if any(length <= 0 for length in branch_length.values()):
+        raise ValueError("All branch lengths must be positive."
+            f"Got branch lengths {branch_length}.")
+    if n_gamma_bins <= 0:
+        raise ValueError("Number of gamma bins must be positive."
+            f"Got n_gamma_bins={n_gamma_bins}.")
+    if alpha <= 0:
+        raise ValueError("Alpha parameter must be positive."
+            f"Got alpha={alpha}.")
+    if not np.isclose(sum(pi_params), 1.0):
+        raise ValueError("GTR frequency parameters must sum to 1."
+            f"Got pi_params={pi_params}, sum={sum(pi_params)}.")
+    if any(r < 0 for r in r_params):
+        raise ValueError("GTR rate parameters must be non-negative."
+            f"Got r_params={r_params}.")
     
     tree.branch_length = branch_length
 
@@ -252,11 +280,16 @@ def calc_likelihood(sequences: dict[str, str], tree: PhyloTree, branch_length: d
     tree.likelihoods = {site_index: None for site_index in range(n_chars)}
 
     # assume independence over sites: total likelihood is the product of likelihoods at each site
-    likelihood = 1.0
-    for site_index in range(n_chars):
-        likelihood *= felsenstein_pruning(sequences, tree, site_index, gamma_vals)
-
-    return likelihood
+    if not calc_raw_likelihood:
+        log_likelihood = 0.0
+        for site_index in range(n_chars):  # ln(L) = ln(L1 * L2 * ...) = ln(L1) + ln(L2) + ...
+            log_likelihood += np.log(felsenstein_pruning(sequences, tree, site_index, gamma_vals))
+        return log_likelihood
+    else:
+        likelihood = 1.0
+        for site_index in range(n_chars):  # L = L1 * L2 * ...
+            likelihood *= felsenstein_pruning(sequences, tree, site_index, gamma_vals)
+        return likelihood
 
 
 if __name__ == "__main__":
@@ -304,9 +337,10 @@ if __name__ == "__main__":
     r_params = (r_AC, r_AG, r_AT, r_CG, r_CT, r_GT)
     pi_params = (pi_A, pi_C, pi_G, pi_T)
 
-    likelihood = calc_likelihood(sequences, tree, branch_length, r_params, pi_params, alpha, n_gamma_bins=4)
+    log_likelihood = calc_log_likelihood(sequences, tree, branch_length, r_params, pi_params, alpha, 
+                                 n_gamma_bins=4, calc_raw_likelihood=False)
 
-    print(f"Likelihood of observing the sequences at the leaves of the tree: p(D | T, b, theta, alpha) = {likelihood}")
+    print(f"Log-Likelihood of observing the sequences at the leaves of the tree: ln p(D | T, b, theta, alpha) = {log_likelihood}")
 
     tree_newick = tree.to_newick(include_lengths=True)
 

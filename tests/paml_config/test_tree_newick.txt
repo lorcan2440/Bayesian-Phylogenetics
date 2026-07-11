@@ -1,0 +1,1 @@
+((Human:0.05000,Chimpanzee:0.05000):0.10000,(Gorilla:0.08000,Orangutan:0.12000):0.10000);

@@ -1,1 +1,6 @@
 __pycache__
+.pytest_cache
+.venv
+paml
+debug.log
+phylo_tree.svg

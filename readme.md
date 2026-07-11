@@ -2,15 +2,21 @@
 
 This repo aims to implement Bayesian phylogenetic inference from first-principles in Python.
 
+Currently, the code can compute the log-likelihood of a given phylogenetic tree and set of extant taxa sequences under the GTR+Γ mutation model, and compare the results to PAML's baseml program. The unit test finds strong agreement with PAML.
+
+Written from first principles for educational purposes. Since the program is pure Python, it is not expected to be fast enough for real-world use on large datasets.
+
 ### Progress
 
 - [x] Implement a phylogenetic tree data structure
 - [x] Implement the GTR+Γ mutation model
 - [x] Implement Felsenstein's pruning algorithm for likelihood calculation
+- [x] Test likelihood calculation against PAML's baseml
 - [ ] Implement Metropolis-Hastings algorithm
 - [ ] Implement Markov chain Monte Carlo (MCMC) with burn-in and pruning at stationarity
 - [ ] Calculate the posterior trees and the MAP tree
 - [ ] Calculate clade consensus probabilities
+- [ ] Test MCMC against MrBayes or RevBayes
 - [ ] Convert to MC^3 using multiprocessing for parallel tempering
 - [ ] Use thermodynamic integration to calculate the evidence P(D)
 - [ ] Perform ancestral state reconstruction
