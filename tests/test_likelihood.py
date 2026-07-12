@@ -59,13 +59,22 @@ def test_likelihood(create_test_tree):
     
     # define directories for PAML
     repo_root = Path(__file__).resolve().parents[1]
-    SEQUENCES_FILE_PATH = repo_root / "tests" / "paml_config" / "test_case.phy"
-    TREE_FILE_PATH = repo_root / "tests" / "paml_config" / "test_tree_newick.txt"
-    PAML_CONFIG_FILE_PATH = repo_root / "tests" / "paml_config" / "baseml.ctl"
-    PAML_OUTPUT_FILE_PATH = repo_root / "tests" / "paml_output" / "results.txt"
+    tests_dir = repo_root / "tests"
+    paml_config_dir = tests_dir / "paml_config"
+    paml_output_dir = tests_dir / "paml_output"
+    paml_working_dir = tests_dir
+
+    SEQUENCES_FILE_PATH = paml_config_dir / "test_case.phy"
+    TREE_FILE_PATH = paml_config_dir / "test_tree_newick.txt"
+    PAML_CONFIG_FILE_PATH = paml_config_dir / "baseml.ctl"
+    PAML_OUTPUT_FILE_PATH = paml_output_dir / "results.txt"
     PAML_BASEML_CTL_SRC = repo_root / "paml" / "src" / "baseml.ctl"
     PAML_BASEML_SRC = repo_root / "paml" / "bin" / "baseml.exe"
-    PAML_OUTPUT_DIR = repo_root / "tests" / "paml_output"
+
+    # write relative paths into baseml.ctl so it does not contain full machine-specific paths
+    sequences_file_ctl_path = SEQUENCES_FILE_PATH.relative_to(paml_working_dir).as_posix()
+    tree_file_ctl_path = TREE_FILE_PATH.relative_to(paml_working_dir).as_posix()
+    paml_output_file_ctl_path = PAML_OUTPUT_FILE_PATH.relative_to(paml_working_dir).as_posix()
 
     # copy the template baseml.ctl file provided by PAML into our test directory for editing
     shutil.copy(PAML_BASEML_CTL_SRC, PAML_CONFIG_FILE_PATH)
@@ -85,9 +94,9 @@ def test_likelihood(create_test_tree):
     with open(PAML_CONFIG_FILE_PATH, "r+") as f:
         ctl_lines = f.readlines()
         replacement_vals = {
-            "seqfile": SEQUENCES_FILE_PATH,
-            "treefile": TREE_FILE_PATH,
-            "outfile": PAML_OUTPUT_FILE_PATH,
+            "seqfile": sequences_file_ctl_path,
+            "treefile": tree_file_ctl_path,
+            "outfile": paml_output_file_ctl_path,
             "alpha": alpha,     # for gamma distribution
             "fix_blength": 2,   # fix branch lengths to our inputs
             "model": 7,         # for GTR
@@ -110,7 +119,7 @@ def test_likelihood(create_test_tree):
     # run PAML's baseml program
     paml_output = subprocess.run(
         [str(PAML_BASEML_SRC), str(PAML_CONFIG_FILE_PATH)],
-        cwd=str(PAML_OUTPUT_DIR),
+        cwd=str(paml_output_dir),
         check=False,
         capture_output=True,
         text=True,

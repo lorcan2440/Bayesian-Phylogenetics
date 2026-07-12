@@ -1,6 +1,6 @@
-seqfile = C:\Users\lnick\Documents\Programming\Learning\Bioinformatics\Bayes-Phylogenetics\tests\paml_config\test_case.phy * sequence data filename
-treefile = C:\Users\lnick\Documents\Programming\Learning\Bioinformatics\Bayes-Phylogenetics\tests\paml_config\test_tree_newick.txt * tree Structure file name
-outfile = C:\Users\lnick\Documents\Programming\Learning\Bioinformatics\Bayes-Phylogenetics\tests\paml_output\results.txt           * main result file name
+seqfile = paml_config/test_case.phy * sequence data filename
+treefile = paml_config/test_tree_newick.txt * tree Structure file name
+outfile = paml_output/results.txt           * main result file name
 
         noisy = 3  * 0,1,2,3,9: how much rubbish on the screen
 verbose = 1  * 0: concise; 1: detailed, 2: too much

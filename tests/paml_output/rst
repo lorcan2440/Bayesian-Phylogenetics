@@ -1,4 +1,4 @@
 Supplemental results for BASEML
 
-seqf:  C:\Users\lnick\Documents\Programming\Learning\Bioinformatics\Bayes-Phylogenetics\tests\paml_config\test_case.phy
-treef: C:\Users\lnick\Documents\Programming\Learning\Bioinformatics\Bayes-Phylogenetics\tests\paml_config\test_tree_newick.txt
+seqf:  paml_config/test_case.phy
+treef: paml_config/test_tree_newick.txt
