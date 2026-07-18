@@ -20,13 +20,17 @@ Written from first principles for educational purposes. Since the program is pur
 - [x] Define prior distributions
 - [x] Define proposal distributions for MCMC
 - [x] Implement Metropolis-Hastings algorithm
-- [ ] Implement Markov chain Monte Carlo (MCMC) with burn-in and pruning at stationarity
+- [x] Implement the Markov chain with burn-in and pruning at stationarity
+- [ ] Estimate the burn-in time using exponential autocorrelation time
+- [ ] Implement Monte Carlo estimatation
+- [ ] Estimate uncertainties in Monte Carlo estimates using integrated autocorrelation time
 - [ ] Calculate the posterior trees and the MAP tree
 - [ ] Calculate clade consensus probabilities
 - [ ] Test MCMC against MrBayes or RevBayes
 
 #### Milestone 3: Modern optimisations
 
+- [ ] Allow real-time visualisation of the state space, autocorrelation and convergence of the chain
 - [ ] Convert to MC^3 using multiprocessing for parallel tempering
 - [ ] Use thermodynamic integration to calculate the evidence P(D)
 - [ ] Perform ancestral state reconstruction (ASR)
