@@ -128,9 +128,7 @@ class PhyloTree:
         return _subtree(self.root) + ";"
 
 
-def random_binary_tree(
-    taxa: list[str], rng: random.Random, init_branch_mean: float = 0.1
-) -> PhyloTree:
+def random_binary_tree(taxa: list[str], rng: random.Random, init_branch_mean: float = 0.1) -> PhyloTree:
     if len(taxa) < 2:
         raise ValueError("Need at least two taxa to form a tree.")
 

@@ -122,7 +122,7 @@ def propose_new_GTR_freqs(pi_params: np.ndarray, eta: np.ndarray = None, rng_see
     else:
         rng = np.random.default_rng(rng_seed)
 
-    # additive log ratio (ALR) transformation to map the simplex to R^3 (logit space)
+    # centred log ratio (CLR) transformation to map the simplex to R^3 (logit space)
     z = np.log(pi_params[:-1] / pi_params[-1])
     
     # perturb in logit space
