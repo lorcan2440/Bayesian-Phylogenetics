@@ -109,23 +109,28 @@ def calc_transition_probability_matrix(Q_eig: tuple[np.ndarray], branch_length: 
     return P
 
 
-def calc_likelihood_of_ancestral_char(tree: PhyloTree, node: int, char_index: int, gamma: float, site_index: int) -> float:
+def calc_likelihood_of_ancestral_char(tree: PhyloTree, node: int, char_index: int, gamma: float, site_index: int, print_log: bool = False) -> float:
     '''Calculate the likelihood L_node(char) of observing a character at a given node, given the likelihoods of its 
     children and the transition probabilities along the branches.
 
     Returns L_node^(k)(char).
 
     ### Arguments
+    #### Required
     - `tree` (PhyloTree): the phylogenetic tree
     - `node` (int): the node ID for which to calculate the likelihood
     - `char_index` (int): the index of the character in CHARS for which to calculate the likelihood
     - `gamma` (float): rate heterogeneity parameter
+    - `site_index` (int): the index of the site for which to calculate the likelihood
+    #### Optional
+    - `print_log` (bool, default=False): whether to print log messages during the calculation
 
     ### Returns
     - `float`: likelihood of observing the character at the given node
     '''
 
-    logger.info(f'\t\t\tCalculating likelihood of ancestral node {node} having character "{CHARS[char_index]}".')
+    if print_log:
+        logger.info(f'\t\t\tCalculating likelihood of ancestral node {node} having character "{CHARS[char_index]}".')
 
     left_child, right_child = tree.children[node]
 
@@ -151,11 +156,11 @@ def calc_likelihood_of_ancestral_char(tree: PhyloTree, node: int, char_index: in
 
     if prod == 0:
         logger.warning(f"\t\t\tLikelihood of ancestral node {node} having character '{CHARS[char_index]}' "
-                       f"has underflowed to zero. Consider using log-likelihoods instead.")
+            f"has underflowed to zero. Consider using log-likelihoods instead.")
     return prod
 
 
-def felsenstein_pruning(sequences: dict[str, str], tree: PhyloTree, site_index: int, gamma_vals: np.ndarray) -> float:
+def felsenstein_pruning(sequences: dict[str, str], tree: PhyloTree, site_index: int, gamma_vals: np.ndarray, print_log: bool = False) -> float:
     '''Use Felsenstein's pruning algorithm to calculate the likelihood of observing characters at all nodes 
     in the tree, at a given site.
 
@@ -163,23 +168,28 @@ def felsenstein_pruning(sequences: dict[str, str], tree: PhyloTree, site_index: 
     b are the branch lengths, and theta are the GTR parameters.
 
     ### Arguments
+    #### Required
     - `sequences` (dict[str, str]): dictionary mapping taxon names to their sequences
     - `tree` (PhyloTree): the phylogenetic tree
     - `site_index` (int): the index of the site for which to calculate the likelihoods
     - `gamma_vals` (np.ndarray): array of gamma values for rate heterogeneity
+    #### Optional
+    - `print_log` (bool, default=False): whether to print log messages during the calculation
 
     ### Returns
     - `float`: the likelihood of observing the characters at the given site
     '''
 
-    logger.info(f"Calculating likelihood for site {site_index}.")
+    if print_log:
+        logger.info(f"Calculating likelihood for site {site_index}.")
 
     n_gamma_bins = len(gamma_vals)
 
     root_likelihood = 0
     for gamma in gamma_vals:  # repeat for each sampled gamma value (heterogeneous rate parameter)
 
-        logger.info(f"\tCalculating likelihood with gamma = {gamma:.4f}.")
+        if print_log:
+            logger.info(f"\tCalculating likelihood with gamma = {gamma:.4f}.")
 
         # initialise likelihood vectors at this site, for all nodes
         tree.likelihoods[site_index] = {}
@@ -196,9 +206,10 @@ def felsenstein_pruning(sequences: dict[str, str], tree: PhyloTree, site_index: 
             if node not in tree.children:
                 continue  # we already know the likelihoods for leaf nodes
             else:
-                logger.info(f"\t\tCalculating likelihood vector for ancestral node {node}.")
+                if print_log:
+                    logger.info(f"\t\tCalculating likelihood vector for ancestral node {node}.")
                 for char_index, _char in enumerate(CHARS):  # set the likelihood vector for this node
-                    tree.likelihoods[site_index][node][char_index] = calc_likelihood_of_ancestral_char(tree, node, char_index, gamma, site_index)
+                    tree.likelihoods[site_index][node][char_index] = calc_likelihood_of_ancestral_char(tree, node, char_index, gamma, site_index, print_log=print_log)
 
         # compute site likelihood at the root, p(D_k | T, b, theta, gamma_k)
         root_likelihood_gamma = 0
@@ -214,7 +225,7 @@ def felsenstein_pruning(sequences: dict[str, str], tree: PhyloTree, site_index: 
 
 def calc_log_likelihood(sequences: dict[str, str], tree: PhyloTree, branch_length: dict[int, float], 
                     r_params: tuple[float], pi_params: tuple[float], alpha: float, 
-                    n_gamma_bins: int = 4, calc_raw_likelihood: bool = False) -> float:
+                    n_gamma_bins: int = 4, calc_raw_likelihood: bool = False, print_log: bool = False) -> float:
     '''Calculate the log-likelihood of observing the given sequences at the leaves of the tree, under the GTR model with 
     rate heterogeneity.
 
@@ -234,12 +245,14 @@ def calc_log_likelihood(sequences: dict[str, str], tree: PhyloTree, branch_lengt
     #### Optional
     - `n_gamma_bins` (int, default=4): number of discrete gamma bins to use for rate heterogeneity
     - `calc_raw_likelihood` (bool, default=False): whether to calculate the raw likelihood rather than the log-likelihood
+    - `print_log` (bool, default=False): whether to print log messages during the calculation
 
     ### Returns
     - `float`: the log-likelihood of observing the sequences at the leaves of the tree
     '''
 
-    logger.info("Started calculation of likelihood.")
+    if print_log:
+        logger.info("Started calculation of likelihood.")
 
     # check inputs are valid
     if len(set(len(seq) for seq in sequences.values())) != 1:
@@ -287,12 +300,12 @@ def calc_log_likelihood(sequences: dict[str, str], tree: PhyloTree, branch_lengt
     if not calc_raw_likelihood:
         log_likelihood = 0.0
         for site_index in range(n_chars):  # ln(L) = ln(L1 * L2 * ...) = ln(L1) + ln(L2) + ...
-            log_likelihood += np.log(felsenstein_pruning(sequences, tree, site_index, gamma_vals))
+            log_likelihood += np.log(felsenstein_pruning(sequences, tree, site_index, gamma_vals, print_log=print_log))
         return log_likelihood
     else:
         likelihood = 1.0
         for site_index in range(n_chars):  # L = L1 * L2 * ...
-            likelihood *= felsenstein_pruning(sequences, tree, site_index, gamma_vals)
+            likelihood *= felsenstein_pruning(sequences, tree, site_index, gamma_vals, print_log=print_log)
         return likelihood
 
 
@@ -342,7 +355,7 @@ if __name__ == "__main__":
     pi_params = (pi_A, pi_C, pi_G, pi_T)
 
     log_likelihood = calc_log_likelihood(sequences, tree, branch_length, r_params, pi_params, alpha, 
-                                 n_gamma_bins=4, calc_raw_likelihood=False)
+                                 n_gamma_bins=4, calc_raw_likelihood=False, print_log=True)
 
     print(f"Log-Likelihood of observing the sequences at the leaves of the tree: ln p(D | T, b, theta, alpha) = {log_likelihood}")
 

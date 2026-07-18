@@ -3,6 +3,7 @@ import logging
 from pathlib import Path
 
 # external modules
+import numpy as np
 from rich.console import Console
 from rich.logging import RichHandler
 
@@ -43,3 +44,8 @@ def get_logger(
     log.setLevel(package_level)
 
     return log
+
+
+def branch_lengths_to_array(branch_lengths: dict[int, float]) -> np.ndarray:
+    branch_ids = sorted(branch_lengths.keys())
+    return np.array([branch_lengths[branch_id] for branch_id in branch_ids], dtype=float)
